@@ -30,6 +30,20 @@ let gamma0 = [
     ("or", TyArrow (TyBool, TyArrow (TyBool, TyBool)))
     ("not", TyArrow (TyBool, TyBool))
     ("-", TyArrow (TyInt, TyInt))
+
+    
+    ("+.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
+    ("-.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
+    ("*.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
+    ("/.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
+    ("%.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
+    ("=.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
+    ("<.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
+    ("<=.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
+    (">.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
+    ("=>.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
+    ("<>.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
+    ("-.", TyArrow (TyFloat, TyFloat))
 ]
 
 let counter = ref -1

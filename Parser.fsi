@@ -15,16 +15,27 @@ type token =
   | BRA
   | KET
   | PLUS
+  | PLUSDOT
   | MINUS
+  | MINUSDOT
   | STAR
+  | STARDOT
   | SLASH
+  | SLASHDOT
   | PERCENT
+  | PERCENTDOT
   | LT
+  | LTDOT
   | GT
+  | GTDOT
   | LEQ
+  | LEQDOT
   | GEQ
+  | GEQDOT
   | EQ
+  | EQDOT
   | NEQ
+  | NEQDOT
   | AND
   | OR
   | NOT
@@ -51,16 +62,27 @@ type tokenId =
     | TOKEN_BRA
     | TOKEN_KET
     | TOKEN_PLUS
+    | TOKEN_PLUSDOT
     | TOKEN_MINUS
+    | TOKEN_MINUSDOT
     | TOKEN_STAR
+    | TOKEN_STARDOT
     | TOKEN_SLASH
+    | TOKEN_SLASHDOT
     | TOKEN_PERCENT
+    | TOKEN_PERCENTDOT
     | TOKEN_LT
+    | TOKEN_LTDOT
     | TOKEN_GT
+    | TOKEN_GTDOT
     | TOKEN_LEQ
+    | TOKEN_LEQDOT
     | TOKEN_GEQ
+    | TOKEN_GEQDOT
     | TOKEN_EQ
+    | TOKEN_EQDOT
     | TOKEN_NEQ
+    | TOKEN_NEQDOT
     | TOKEN_AND
     | TOKEN_OR
     | TOKEN_NOT
