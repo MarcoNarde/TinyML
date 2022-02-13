@@ -14,44 +14,46 @@ type subst = (tyvar * ty) list
 // type inference
 //
 
-let gamma0 = [
-    ("+", TyArrow (TyInt, TyArrow (TyInt, TyInt)))
-    ("-", TyArrow (TyInt, TyArrow (TyInt, TyInt)))
-    ("*", TyArrow (TyInt, TyArrow (TyInt, TyInt)))
-    ("/", TyArrow (TyInt, TyArrow (TyInt, TyInt)))
-    ("%", TyArrow (TyInt, TyArrow (TyInt, TyInt)))
-    ("=", TyArrow (TyInt, TyArrow (TyInt, TyBool)))
-    ("<", TyArrow (TyInt, TyArrow (TyInt, TyBool)))
-    ("<=", TyArrow (TyInt, TyArrow (TyInt, TyBool)))
-    (">", TyArrow (TyInt, TyArrow (TyInt, TyBool)))
-    ("=>", TyArrow (TyInt, TyArrow (TyInt, TyBool)))
-    ("<>", TyArrow (TyInt, TyArrow (TyInt, TyBool)))
-    ("and", TyArrow (TyBool, TyArrow (TyBool, TyBool)))
-    ("or", TyArrow (TyBool, TyArrow (TyBool, TyBool)))
-    ("not", TyArrow (TyBool, TyBool))
-    ("-", TyArrow (TyInt, TyInt))
+// starting environment with operation
+let gamma0 : scheme env = [
+    ("+", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyInt))))
+    ("-", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyInt))))
+    ("*", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyInt))))
+    ("/", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyInt))))
+    ("%", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyInt))))
+    ("=", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyBool))))
+    ("<", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyBool))))
+    ("<=", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyBool))))
+    (">", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyBool))))
+    ("=>", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyBool))))
+    ("<>", Forall([],TyArrow (TyInt, TyArrow (TyInt, TyBool))))
+    ("and", Forall([],TyArrow (TyBool, TyArrow (TyBool, TyBool))))
+    ("or", Forall([],TyArrow (TyBool, TyArrow (TyBool, TyBool))))
+    ("not", Forall([],TyArrow (TyBool, TyBool)))
+    ("-", Forall([],TyArrow (TyInt, TyInt)))
 
     
-    ("+.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
-    ("-.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
-    ("*.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
-    ("/.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
-    ("%.", TyArrow (TyFloat, TyArrow (TyFloat, TyFloat)))
-    ("=.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
-    ("<.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
-    ("<=.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
-    (">.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
-    ("=>.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
-    ("<>.", TyArrow (TyFloat, TyArrow (TyFloat, TyBool)))
-    ("-.", TyArrow (TyFloat, TyFloat))
+    ("+.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyFloat))))
+    ("-.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyFloat))))
+    ("*.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyFloat))))
+    ("/.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyFloat))))
+    ("%.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyFloat))))
+    ("=.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyBool))))
+    ("<.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyBool))))
+    ("<=.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyBool))))
+    (">.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyBool))))
+    ("=>.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyBool))))
+    ("<>.", Forall([],TyArrow (TyFloat, TyArrow (TyFloat, TyBool))))
+    ("-.", Forall([],TyArrow (TyFloat, TyFloat)))
 ]
 
-let counter = ref -1
+let mutable counter = -1
 
-let generate_fresh_variable () : string =
-    let list_variables = ['a' .. 'z'] |> List.map string
-    counter.Value <- !counter + 1
-    list_variables.Item(!counter)
+let generate_fresh_variable () =
+    counter <- counter + 1
+    counter + int 'a'
+        |> char
+        |> string
 
 let rec occurs (tv : tyvar) (t : ty) : bool = 
     match t with
@@ -108,7 +110,7 @@ let apply_subst (t : ty) (s : subst) : ty =
 
 let apply_subst_helper s t = apply_subst t s
 
-// Give all tyvar in a type
+// Give all tyvar in a type -> FV
 let rec freevars_ty (t : ty) : tyvar Set =
     match t with
     | TyName _ -> Set.empty
@@ -119,6 +121,21 @@ let rec freevars_ty (t : ty) : tyvar Set =
 let freevars_scheme (Forall (tvs, t)) =
     Set.difference (freevars_ty t) (Set.ofList tvs)
 
+let rec freevars_env (en: scheme env) : tyvar Set =
+    match en with
+    | [] -> Set.empty
+    | e  -> match e with
+            |(_,sc)::tail -> Set.union (freevars_env tail) (freevars_scheme sc)
+
+
+let generalize (env : scheme env) (typ : ty) : scheme =
+    let vars = Set.difference (freevars_ty typ) (freevars_env env)
+    Forall (Set.toList vars, typ)
+
+let instantiate (Forall (tvs, typ)) : ty =
+    let nvars = List.map (fun _ -> TyVar(generate_fresh_variable()) ) tvs
+    let s = Map.ofSeq (Seq.zip tvs nvars) |> Map.toList
+    apply_subst typ s
 
 let rec tupleMap l: subst =
     match l with
@@ -136,11 +153,12 @@ let rec tupleMap2 l: ty list =
 // type inference
 //
 
-let rec typeinfer_expr (env : ty env) (e : expr) : ty * subst =
+let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
     match e with
     | Var x -> 
         let _, t = List.find (fun (y, _) -> x = y) env
-        (t, [])
+        (instantiate t, [])
+
     | Lit (LInt _) -> (TyInt, [])
     | Lit (LFloat _) -> (TyFloat, [])
     | Lit (LString _) -> (TyString, [])
@@ -159,21 +177,30 @@ let rec typeinfer_expr (env : ty env) (e : expr) : ty * subst =
 
     | Lambda (x, None, e) ->
         let freshVar = TyVar(generate_fresh_variable())
-        let t,s = typeinfer_expr((x, freshVar) :: env) e
-        //final type = 'a -> bodyTypeCheckType with the substitution produced by bodyTypeCheckType
+        let sc1 = Forall(list.Empty,freshVar) //46:00 lesson 30 november
+        let t,s = typeinfer_expr((x, sc1) :: env) e
         let finalType = apply_subst (TyArrow(freshVar,t)) s
         (finalType,s)
 
     | Lambda (x, Some typ, e) ->
-        let t,s = typeinfer_expr((x, typ) :: env) e
-        //final type = 'a -> bodyTypeCheckType with the substitution produced by bodyTypeCheckType
+        let sc1 = Forall(list.Empty,typ)
+        let t,s = typeinfer_expr((x, sc1) :: env) e
         let finalType = apply_subst (TyArrow(typ,t)) s
         (finalType,s)
 
     //monomorphic version
-    | Let (x, None , e1, e2) -> 
+    (*| Let (x, None , e1, e2) -> 
         let t1, s1 = typeinfer_expr env e1
         let t2, s2 = typeinfer_expr ((x,t1) :: env) e2
+        let s3 = compose_subst s2 s1
+        (t2, s3)*)
+
+    //polimorphic version
+    | Let (x, None , e1, e2) -> 
+        let t1, s1 = typeinfer_expr env e1
+        //Generalize
+        let sc1 = generalize env t1
+        let t2, s2 = typeinfer_expr ((x,sc1) :: env) e2
         let s3 = compose_subst s2 s1
         (t2, s3)
 

@@ -78,12 +78,12 @@ let rec eval_expr (env : value env) (e : expr) : value =
     | BinOp (e1, "=", e2) -> binop_compare (=) (=) "=" env e1 e2
     | BinOp (e1, "<>", e2) -> binop_compare (<>) (<>) "<>" env e1 e2
     
-    | BinOp (e1, "<.", e2) -> binop_compare (<) (<) "<" env e1 e2
-    | BinOp (e1, "<=.", e2) -> binop_compare (<=) (<=) "<=" env e1 e2
-    | BinOp (e1, ">.", e2) -> binop_compare (>) (>) ">" env e1 e2
-    | BinOp (e1, ">=.", e2) -> binop_compare (>=) (>=) ">=" env e1 e2
-    | BinOp (e1, "=.", e2) -> binop_compare (=) (=) "=" env e1 e2
-    | BinOp (e1, "<>.", e2) -> binop_compare (<>) (<>) "<>" env e1 e2
+    | BinOp (e1, "<.", e2) -> binop_compare (<) (<) "<." env e1 e2
+    | BinOp (e1, "<=.", e2) -> binop_compare (<=) (<=) "<=." env e1 e2
+    | BinOp (e1, ">.", e2) -> binop_compare (>) (>) ">." env e1 e2
+    | BinOp (e1, ">=.", e2) -> binop_compare (>=) (>=) ">=." env e1 e2
+    | BinOp (e1, "=.", e2) -> binop_compare (=) (=) "=." env e1 e2
+    | BinOp (e1, "<>.", e2) -> binop_compare (<>) (<>) "<>." env e1 e2
     
     //BinOP ( and , or )
     | BinOp (e1, "and", e2) -> binop_logic (&&) "and" env e1 e2
