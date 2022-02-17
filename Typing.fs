@@ -90,7 +90,6 @@ let apply_subst_helper s t = apply_subst t s
 let compose_subst (s1 : subst) (s2 : subst) : subst =
     //s1 @ (apply_subst_subst s1 s2)
     let s2' : subst = List.map (fun (x,t)  -> (x,apply_subst_helper s1 t)) s2 
-    printfn "COMPOSE SUBST : %O to %O" s1 s2'
     s1 @ s2'
 
 let rec remove n lst = 
@@ -192,24 +191,25 @@ let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
     | App (e1, e2) ->
         let codTy = TyVar(generate_fresh_variable ())
         let t1, s1 = typeinfer_expr env e1
-        let t2, s2 = typeinfer_expr env e2
-        let s3 = unify t1 (TyArrow (t2,codTy))
-        let s32 = compose_subst s3 s2 
-        let s321 = compose_subst s32 s1
-        (apply_subst codTy s321, s321) 
+        let t2, s2 = typeinfer_expr (apply_subst_env s1 env) e2
+        let s3 = unify (apply_subst_helper s2 t1) (TyArrow (t2,codTy))
+        let s3 = compose_subst s3 s2 
+        (apply_subst codTy s3, compose_subst (compose_subst s3 s2) s1) 
 
     | Lambda (x, None, e) ->
         let freshVar = TyVar(generate_fresh_variable())
-        let sc1 = Forall([],freshVar) //46:00 lesson 30 november
-        let t,s = typeinfer_expr((x, sc1) :: env) e
+        let env' = remove x env
+        let env'' = (x,Forall([],freshVar)) :: env'
+        let t,s = typeinfer_expr env'' e
         let finalType = apply_subst (TyArrow(freshVar,t)) s
-        (finalType,s)
+        (TyArrow(apply_subst freshVar s, t ), s)
 
     | Lambda (x, Some typ, e) ->
-        let sc1 = Forall([],typ)
-        let t,s = typeinfer_expr((x, sc1) :: env) e
+        let env' = remove x env
+        let env'' = (x,Forall([],typ)) :: env'
+        let t,s = typeinfer_expr env'' e
         let finalType = apply_subst (TyArrow(typ,t)) s
-        (finalType,s)
+        (TyArrow(apply_subst typ s, t ), s)
 
     //monomorphic version
     (*| Let (x, None , e1, e2) -> 
@@ -220,13 +220,13 @@ let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
 
     //polimorphic version
     | Let (x, None , e1, e2) -> 
+        let env' = remove x env
         let t1, s1 = typeinfer_expr env e1
         //Generalize
-        let sc1 = generalize env t1
-        let t2, s2 = typeinfer_expr ((x,sc1) :: env) e2
-        let s3 = compose_subst s2 s1
-        let t = apply_subst t2 s3
-        (t, s3)
+        let t' = generalize (apply_subst_env s1 env) t1
+        let env'' = (x,t') :: env'
+        let t2, s2 = typeinfer_expr (apply_subst_env s1 env'') e2
+        (t2, compose_subst s1 s2)
 
     | LetRec (f, None, e1, e2) ->
         let funTy = TyVar(generate_fresh_variable())
