@@ -6,7 +6,6 @@
 module TinyML.Typing
 
 open Ast
-open FSharpPlus
 
 let type_error fmt = throw_formatted TypeError fmt
 
