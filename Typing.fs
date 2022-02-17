@@ -6,6 +6,7 @@
 module TinyML.Typing
 
 open Ast
+open FSharpPlus
 
 let type_error fmt = throw_formatted TypeError fmt
 
@@ -68,8 +69,43 @@ let rec occurs (tv : tyvar) (t : ty) : bool =
                                        else occ_list tv tail
                     occ_list tv tt
 
+
+(* substitute term s for all occurrences of var x in term t *)
+let rec subst (s : ty) (x : tyvar) (t : ty) : ty =
+  match t with
+  | TyVar y -> if x = y then s else t
+  | TyArrow (u, v) -> TyArrow (subst s x u, subst s x v)
+  | TyName n -> t
+  | TyTuple ts -> TyTuple(List.map (subst s x) ts)
+
+
+  // TODO implement this
+let apply_subst (t : ty) (s : subst) : ty = 
+  List.foldBack (fun (x, e) -> subst e x) s t
+
+let apply_subst_helper s t = apply_subst t s
+    
+
 // TODO implement this
-let compose_subst (s1 : subst) (s2 : subst) : subst = s1 @ s2
+let compose_subst (s1 : subst) (s2 : subst) : subst =
+    //s1 @ (apply_subst_subst s1 s2)
+    let s2' : subst = List.map (fun (x,t)  -> (x,apply_subst_helper s1 t)) s2 
+    printfn "COMPOSE SUBST : %O to %O" s1 s2'
+    s1 @ s2'
+
+let rec remove n lst = 
+    match lst with
+    | (h,l)::tl when h = n -> tl
+    | (h,l)::tl -> (h,l):: (remove n tl)
+    | []    -> []
+
+let apply_subst_scheme (subst : subst) (s : scheme) : scheme = 
+    match s with 
+    |Forall(vars,t) -> Forall(vars, apply_subst t (List.foldBack remove vars subst))
+
+let apply_subst_env (subst : subst) (env : scheme env) : scheme env = 
+    List.map (fun (t,s) -> (t,apply_subst_scheme subst s)) env
+
 
 // TODO implement this
 let rec unify (t1 : ty) (t2 : ty) : subst = 
@@ -95,20 +131,6 @@ let rec unify (t1 : ty) (t2 : ty) : subst =
                                                 let subs2 = unify te1 te2
                                                 compose_subst subs1 subs2*)
     | _ -> unexpected_error "unify: unsupported operation"
-
-(* substitute term s for all occurrences of var x in term t *)
-let rec subst (s : ty) (x : tyvar) (t : ty) : ty =
-  match t with
-  | TyVar y -> if x = y then s else t
-  | TyArrow (u, v) -> TyArrow (subst s x u, subst s x v)
-  | TyName n -> t
-  | TyTuple ts -> TyTuple(List.map (subst s x) ts)
-
-// TODO implement this
-let apply_subst (t : ty) (s : subst) : ty = 
-  List.foldBack (fun (x, e) -> subst e x) s t
-
-let apply_subst_helper s t = apply_subst t s
 
 // Give all tyvar in a type -> FV
 let rec freevars_ty (t : ty) : tyvar Set =
