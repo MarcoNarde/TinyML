@@ -123,12 +123,11 @@ let rec unify (t1 : ty) (t2 : ty) : subst =
     | TyArrow (tl1,tr1), TyArrow (tl2,tr2) ->   let u1 = unify tl1 tl2
                                                 let u2 = unify tr1 tr2
                                                 compose_subst u1 u2
+    | TyTuple ts, TyTuple ts' ->
+        if ts.Length <> ts'.Length
+        then failwithf "Types do not unify: `%O` vs `%O`" t1 t2
+        else List.fold compose_subst [] (List.map2 unify ts ts')
 
-                                                (*let subs1 = unify tl1 tl2
-                                                let te1 = apply_subst tr1 subs1 
-                                                let te2 = apply_subst tr2 subs1 
-                                                let subs2 = unify te1 te2
-                                                compose_subst subs1 subs2*)
     | _ -> unexpected_error "unify: unsupported operation"
 
 // Give all tyvar in a type -> FV
@@ -192,9 +191,9 @@ let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
         let codTy = TyVar(generate_fresh_variable ())
         let t1, s1 = typeinfer_expr env e1
         let t2, s2 = typeinfer_expr (apply_subst_env s1 env) e2
-        let s3 = unify (apply_subst_helper s2 t1) (TyArrow (t2,codTy))
-        let s3 = compose_subst s3 s2 
-        (apply_subst codTy s3, compose_subst (compose_subst s3 s2) s1) 
+        let s3 = unify (apply_subst t1 s2) (TyArrow (t2,codTy))
+        let s3 = compose_subst (compose_subst s3 s2) s1
+        (apply_subst codTy s3, s3) 
 
     | Lambda (x, None, e) ->
         let freshVar = TyVar(generate_fresh_variable())
@@ -222,23 +221,43 @@ let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
     | Let (x, None , e1, e2) -> 
         let env' = remove x env
         let t1, s1 = typeinfer_expr env e1
-        //Generalize
         let t' = generalize (apply_subst_env s1 env) t1
         let env'' = (x,t') :: env'
         let t2, s2 = typeinfer_expr (apply_subst_env s1 env'') e2
         (t2, compose_subst s1 s2)
 
     | LetRec (f, None, e1, e2) ->
-        let funTy = TyVar(generate_fresh_variable())
-        let env = (f,Forall([],funTy)):: env
-        let t1, s1 = typeinfer_expr env e1
+        (* TEST 1 MA NON FUNZIONA let rec id x = id x e da errori sulla unificazione
+        let funTy = TyArrow(TyVar(generate_fresh_variable()),TyVar(generate_fresh_variable()))
+        printfn "FunTy: %O" funTy 
+        let env' = (f,Forall([],funTy)) :: env
+        let t1, s1 = typeinfer_expr env' e1
+        printfn "t1: %O s1: %O" t1 s1
+        let funTy = apply_subst funTy s1
+        printfn "FunTy: %O" funTy 
+        let t1 = apply_subst t1 s1
+        printfn "t1: %O" t1 
+        let su = unify funTy t1
+        printfn "Su: %O" su 
+        let t1 = apply_subst t1 su
+        let s = compose_subst su s1
+        let env'' = apply_subst_env s env
+        let env'' = (f,generalize env'' t1) :: env''
+        let t2,s2 = typeinfer_expr env'' e2
+        let s = compose_subst s2 s
+        (t2,s)*)
+        let funTy = TyArrow(TyVar(generate_fresh_variable()),TyVar(generate_fresh_variable()))
+        let env' = (f,Forall([],funTy)) :: env
+        let t1, s1 = typeinfer_expr env' e1
         let t1 = apply_subst t1 s1
         let su = unify funTy t1
+        let funTy = apply_subst funTy s1
+        let t1 = apply_subst t1 su
         let s = compose_subst su s1
-        let env = (f,generalize env t1)::env
-        let t2,s2 = typeinfer_expr env e2
+        let env'' = apply_subst_env s env
+        let env'' = (f,generalize env'' t1) :: env''
+        let t2,s2 = typeinfer_expr env'' e2
         let s = compose_subst s2 s
-        let t2 = apply_subst t2 s
         (t2,s)
 
     | IfThenElse (e1, e2, e3o) ->
@@ -256,11 +275,13 @@ let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
                      (apply_subst t2 s5, tot)
 
     | Tuple es ->
-        let t = List.map (typeinfer_expr env) es
-        let comp = tupleMap t
-        let typL =  tupleMap2 t
-        let typ = TyTuple(List.map (apply_subst_helper comp) typL)
-        (typ,comp)
+        let s, tys = List.fold (fun (acc, tys) e ->
+                                                    let env = apply_subst_env acc env
+                                                    let ty, s = typeinfer_expr env e in
+                                                    (compose_subst s acc), ty :: tys)
+                                                    ([], []) es
+        let tys = List.rev tys
+        (apply_subst (TyTuple tys) s, s)
 
     | BinOp(e1, op, e2) ->
         typeinfer_expr env (App (App (Var op, e1), e2))
