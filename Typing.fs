@@ -144,11 +144,12 @@ let rec freevars_env (en: scheme env) : tyvar Set =
     | e  -> match e with
             |(_,sc)::tail -> Set.union (freevars_env tail) (freevars_scheme sc)
 
-
+(* Permette di instanziare uno schema dal tipo del parametro typ *)
 let generalize (env : scheme env) (typ : ty) : scheme =
     let vars = Set.difference (freevars_ty typ) (freevars_env env)
     Forall (Set.toList vars, typ)
 
+(* ritorna il tipo dello schema passato, applycandone la sostutyzione *)
 let instantiate (Forall (tvs, typ)) : ty =
     let nvars = List.map (fun _ -> TyVar(generate_fresh_variable()) ) tvs
     let s = Map.ofSeq (Seq.zip tvs nvars) |> Map.toList
