@@ -69,7 +69,7 @@ let rec occurs (tv : tyvar) (t : ty) : bool =
                     occ_list tv tt
 
 
-(* substitute term s for all occurrences of var x in term t *)
+(* sostituisce il termine s per tutte le occorrenze di var x in term t *)
 let rec subst (s : ty) (x : tyvar) (t : ty) : ty =
   match t with
   | TyVar y -> if x = y then s else t
@@ -78,18 +78,17 @@ let rec subst (s : ty) (x : tyvar) (t : ty) : ty =
   | TyTuple ts -> TyTuple(List.map (subst s x) ts)
 
 
-  // TODO implement this
 let apply_subst (t : ty) (s : subst) : ty = 
   List.foldBack (fun (x, e) -> subst e x) s t
 
 let apply_subst_helper s t = apply_subst t s
     
 
-// TODO implement this
 let compose_subst (s1 : subst) (s2 : subst) : subst =
     let s2' : subst = List.map (fun (x,t)  -> (x,apply_subst_helper s1 t)) s2 
     s1 @ s2'
 
+(* rimuove un elemento n dalla lista lst -> usato per rimuovere dall'environment una variabile *)
 let rec remove n lst = 
     match lst with
     | (h,l)::tl when h = n -> tl
@@ -155,7 +154,7 @@ let instantiate (Forall (tvs, typ)) : ty =
     let s = Map.ofSeq (Seq.zip tvs nvars) |> Map.toList
     apply_subst typ s
 
-let rec tupleMap l: subst =
+(*let rec tupleMap l: subst =
     match l with
     |[] -> []
     |head::tail -> 
@@ -167,10 +166,11 @@ let rec tupleMap2 l: ty list =
     |[] -> []
     |head::tail -> 
                    match head with
-                   |(typ,_) -> typ::(tupleMap2 tail)
+                   |(typ,_) -> typ::(tupleMap2 tail)*)
 // type inference
 //
 
+(* funzione ausiliaria usata per il let con annotazione di tipo *)
 let check_types (t1 : ty) (t2: ty) : bool =
     match t2, t1 with
     |TyName t2, TyName t1 -> t2 = t1
