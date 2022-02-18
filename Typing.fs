@@ -87,7 +87,6 @@ let apply_subst_helper s t = apply_subst t s
 
 // TODO implement this
 let compose_subst (s1 : subst) (s2 : subst) : subst =
-    //s1 @ (apply_subst_subst s1 s2)
     let s2' : subst = List.map (fun (x,t)  -> (x,apply_subst_helper s1 t)) s2 
     s1 @ s2'
 
@@ -109,7 +108,7 @@ let apply_subst_env (subst : subst) (env : scheme env) : scheme env =
 let rec unify (t1 : ty) (t2 : ty) : subst = 
     match t1, t2 with
     | TyName n1, TyName n2 -> if n1 <> n2 
-                              then type_error "unify: unification between different variables name can't be execute"
+                              then type_error "unify: unification between %O and %O can't be execute" n1 n2
                               else []
     | TyVar tv, _ -> if occurs tv t2 
                      then type_error "unify: unification fails because variable %O occurs in %O " tv t2
@@ -172,6 +171,12 @@ let rec tupleMap2 l: ty list =
 // type inference
 //
 
+let check_types (t1 : ty) (t2: ty) : bool =
+    match t2, t1 with
+    |TyName t2, TyName t1 -> t2 = t1
+    |TyArrow (tl,tr), _ -> tr = t1
+    | _ -> false
+
 let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
     match e with
     | Var x -> 
@@ -224,6 +229,15 @@ let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
         let env'' = (x,t') :: env'
         let t2, s2 = typeinfer_expr (apply_subst_env s1 env'') e2
         (t2, compose_subst s1 s2)
+    
+    | Let (x, Some t , e1, e2) -> 
+        let env' = remove x env
+        let t1, s1 = typeinfer_expr env e1
+        if not(check_types t t1) then type_error "Expected %O but got %O" t t1
+        let t' = generalize (apply_subst_env s1 env) t1
+        let env'' = (x,t') :: env'
+        let t2, s2 = typeinfer_expr (apply_subst_env s1 env'') e2
+        (t2, compose_subst s1 s2)
 
     | LetRec (f, None, e1, e2) ->
         (* TEST 1 MA NON FUNZIONA let rec id x = id x e da errori sulla unificazione
@@ -246,6 +260,21 @@ let rec typeinfer_expr (env : scheme env) (e : expr) : ty * subst =
         let s = compose_subst s2 s
         (t2,s)*)
         let funTy = TyArrow(TyVar(generate_fresh_variable()),TyVar(generate_fresh_variable()))
+        let env' = (f,Forall([],funTy)) :: env
+        let t1, s1 = typeinfer_expr env' e1
+        let t1 = apply_subst t1 s1
+        let su = unify funTy t1
+        let funTy = apply_subst funTy s1
+        let t1 = apply_subst t1 su
+        let s = compose_subst su s1
+        let env'' = apply_subst_env s env
+        let env'' = (f,generalize env'' t1) :: env''
+        let t2,s2 = typeinfer_expr env'' e2
+        let s = compose_subst s2 s
+        (t2,s)
+
+    | LetRec (f, Some t, e1, e2) ->
+        let funTy = TyArrow(TyVar(generate_fresh_variable()),t)
         let env' = (f,Forall([],funTy)) :: env
         let t1, s1 = typeinfer_expr env' e1
         let t1 = apply_subst t1 s1
