@@ -101,6 +101,9 @@
     <Reference Include="FSharp.Core">
       <HintPath>packages\FSharp.Core.4.7.1\lib\net45\FSharp.Core.dll</HintPath>
     </Reference>
+    <Reference Include="FSharpPlus">
+      <HintPath>packages\FSharpPlus.1.2.2\lib\net45\FSharpPlus.dll</HintPath>
+    </Reference>
     <Reference Include="FsLexYacc.Runtime">
       <HintPath>packages\FsLexYacc.Runtime.10.0.0\lib\net46\FsLexYacc.Runtime.dll</HintPath>
     </Reference>
@@ -108,6 +111,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime" />
     <Reference Include="System.ValueTuple">
       <HintPath>packages\System.ValueTuple.4.4.0\lib\net47\System.ValueTuple.dll</HintPath>
       <Private>True</Private>

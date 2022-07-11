@@ -63,6 +63,12 @@ let rec eval_expr (env : value env) (e : expr) : value =
     | BinOp (e1, "*", e2) -> binop ( * ) ( * ) "*" env e1 e2
     | BinOp (e1, "/", e2) -> binop ( / ) ( / ) "/" env e1 e2
     | BinOp (e1, "%", e2) -> binop ( % ) ( % ) "%" env e1 e2
+    
+    | BinOp (e1, "+.", e2) -> binop (+) (+) "+" env e1 e2
+    | BinOp (e1, "-.", e2) -> binop (-) (-) "-" env e1 e2
+    | BinOp (e1, "*.", e2) -> binop ( * ) ( * ) "*" env e1 e2
+    | BinOp (e1, "/.", e2) -> binop ( / ) ( / ) "/" env e1 e2
+    | BinOp (e1, "%", e2) -> binop ( % ) ( % ) "%" env e1 e2
 
     //BinOP ( < , <= , > , >= , = , <> )
     | BinOp (e1, "<", e2) -> binop_compare (<) (<) "<" env e1 e2
@@ -71,6 +77,13 @@ let rec eval_expr (env : value env) (e : expr) : value =
     | BinOp (e1, ">=", e2) -> binop_compare (>=) (>=) ">=" env e1 e2
     | BinOp (e1, "=", e2) -> binop_compare (=) (=) "=" env e1 e2
     | BinOp (e1, "<>", e2) -> binop_compare (<>) (<>) "<>" env e1 e2
+    
+    | BinOp (e1, "<.", e2) -> binop_compare (<) (<) "<." env e1 e2
+    | BinOp (e1, "<=.", e2) -> binop_compare (<=) (<=) "<=." env e1 e2
+    | BinOp (e1, ">.", e2) -> binop_compare (>) (>) ">." env e1 e2
+    | BinOp (e1, ">=.", e2) -> binop_compare (>=) (>=) ">=." env e1 e2
+    | BinOp (e1, "=.", e2) -> binop_compare (=) (=) "=." env e1 e2
+    | BinOp (e1, "<>.", e2) -> binop_compare (<>) (<>) "<>." env e1 e2
     
     //BinOP ( and , or )
     | BinOp (e1, "and", e2) -> binop_logic (&&) "and" env e1 e2
@@ -87,6 +100,11 @@ let rec eval_expr (env : value env) (e : expr) : value =
         let v1 = eval_expr env e1
         match v1 with
         | VLit (LInt i) -> VLit (LInt (- i))
+        | _ -> unexpected_error "eval_expr: illegal operands in unary operator (%s): %s %s" "-" "-" (pretty_value v1)
+        
+    | UnOp ("-." , e1) ->
+        let v1 = eval_expr env e1
+        match v1 with
         | VLit (LFloat f) -> VLit (LFloat (- f))
         | _ -> unexpected_error "eval_expr: illegal operands in unary operator (%s): %s %s" "-" "-" (pretty_value v1)
 
